@@ -61,7 +61,7 @@ void InitGame()
 
     ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
-    ball.speed = 3;
+    ball.speed = 16;
     ball.rad = 20;
     ball.x = racket.x;//x координата шарика - на середие ракетки
     ball.y = racket.y - ball.rad;//шарик лежит сверху ракетки
@@ -138,13 +138,6 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
     DeleteDC(hMemDC); // Удаляем контекст памяти
 }
 
-void ShowRacketAndBall()
-{
-    ShowBitmap(window.context, 0, 0, window.width, window.height, hBack); // задний фон
-    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap); // ракетка игрока
-    ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
-
-}
 
 void block_collision() {
 
@@ -169,6 +162,8 @@ void block_collision() {
                     if (overlapRight < minOverlap) minOverlap = overlapRight;
                     if (overlapTop < minOverlap) minOverlap = overlapTop;
                     if (overlapBottom < minOverlap) minOverlap = overlapBottom;
+                    
+                    //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
 
                     // Изменяем направление мяча в зависимости от стороны столкновения
                     if (minOverlap == overlapLeft || minOverlap == overlapRight) {
@@ -180,8 +175,8 @@ void block_collision() {
                         ball.dy = -ball.dy; // Отскок по вертикали
                     }
 
-                    blocks[i][j].isActive = false; // Деактивируем блок
                     collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
+                    blocks[i][j].isActive = false; // Деактивируем блок
                 }
             }
         }
@@ -189,6 +184,12 @@ void block_collision() {
 }
 
 
+void ShowRacketAndBall()
+{
+    ShowBitmap(window.context, 0, 0, window.width, window.height, hBack); // задний фон
+    ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap); // ракетка игрока
+    ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
+}
 
 
 
@@ -211,6 +212,7 @@ void CheckWalls()
 
 void CheckRoof()
 {
+
     if (ball.y < ball.rad)
     {
         ball.dy *= -1;
@@ -262,10 +264,10 @@ void CheckFloor()
 
 void ProcessRoom()
 {
-    //обрабатываем стены, потолок и пол. принцип - угол падения равен углу отражения, а значит, для отскока мы можем просто инвертировать часть вектора движения шарика
     CheckWalls();
     CheckRoof();
     CheckFloor();
+ //обрабатываем стены, потолок и пол. принцип - угол падения равен углу отражения, а значит, для отскока мы можем просто инвертировать часть вектора движения шарика
 }
 
 void ProcessBall()
@@ -312,14 +314,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitWindow();//здесь инициализируем все что нужно для рисования в окне
     InitGame();//здесь инициализируем переменные игры
-
+    block_collision();
    // mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
     ShowCursor(NULL);
 
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
-        ShowRacketAndBall();//рисуем фон, ракетку и шарик
-        block_collision();
+        ShowRacketAndBall();
+        block_collision();//рисуем фон, ракетку и шарик
         ShowScore();//рисуем очик и жизни
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
         Sleep(5);//ждем 16 милисекунд (1/количество кадров в секунду)
