@@ -164,7 +164,7 @@ void block_collision() {
                     if (overlapBottom < minOverlap) minOverlap = overlapBottom;
                     
                     //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
-
+                    //test
                     // Изменяем направление мяча в зависимости от стороны столкновения
                     if (minOverlap == overlapLeft || minOverlap == overlapRight) {
                         ProcessSound("bounce.wav");
