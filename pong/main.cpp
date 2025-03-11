@@ -4,6 +4,7 @@
 
 #include "windows.h" 
 #include <algorithm> 
+#include "math.h"
 
 // секция данных игры  
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
 } sprite;
 const int line = 15, column = 7;
 sprite racket;//ракетка игрока
-sprite block;
+
 sprite blocks[line][column];
 sprite ball;//шарик
 
@@ -39,7 +40,7 @@ void InitGame()
     //результат работы LoadImageA сохраняет в хэндлах битмапов, рисование спрайтов будет произовдиться с помощью этих хэндлов
     ball.hBitmap = (HBITMAP)LoadImageA(NULL, "ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    block.hBitmap = (HBITMAP)LoadImageA(NULL, "bill.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    auto blockBMP = (HBITMAP)LoadImageA(NULL, "bill.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     //------------------------------------------------------
     
@@ -50,6 +51,7 @@ void InitGame()
             blocks[i][j].x = blocks[i][j].width * i;
             blocks[i][j].y = blocks[i][j].height * j + window.height / 3;
             blocks[i][j].isActive = true;
+            blocks[i][j].hBitmap = blockBMP;
         }
     }
     racket.width = 300;
@@ -146,7 +148,7 @@ void block_collision() {
     for (int i = 0; i < line; i++) {
         for (int j = 0; j < column; j++) {
             if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
-                ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, block.hBitmap);
+                
 
                 if (ball.x + ball.rad >= blocks[i][j].x && ball.x - ball.rad <= blocks[i][j].x + blocks[i][j].width &&
                     ball.y + ball.rad >= blocks[i][j].y && ball.y - ball.rad <= blocks[i][j].y + blocks[i][j].height) {
@@ -154,19 +156,17 @@ void block_collision() {
                     // Определяем, с какой стороны произошло столкновение
                     float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
                     float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
-                    float overlapTop = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
-                    float overlapBottom = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
+                    float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
+                    float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
 
                     // Находим минимальное перекрытие вручную
-                    float minOverlap = overlapLeft; // Предполагаем, что минимальное значение — overlapLeft
-                    if (overlapRight < minOverlap) minOverlap = overlapRight;
-                    if (overlapTop < minOverlap) minOverlap = overlapTop;
-                    if (overlapBottom < minOverlap) minOverlap = overlapBottom;
+                    float minOverlapX = min(overlapLeft, overlapRight);
+                    float minOverlapY = min(overlapUP, overlapDOWN);
                     
                     //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
                     //test
                     // Изменяем направление мяча в зависимости от стороны столкновения
-                    if (minOverlap == overlapLeft || minOverlap == overlapRight) {
+                    if (minOverlapX<minOverlapY) {
                         ProcessSound("bounce.wav");
                         ball.dx = -ball.dx; // Отскок по горизонтали
                     }
@@ -177,6 +177,7 @@ void block_collision() {
 
                     collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
                     blocks[i][j].isActive = false; // Деактивируем блок
+                    return;
                 }
             }
         }
@@ -189,6 +190,14 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack); // задний фон
     ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap); // ракетка игрока
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
+    for (int i = 0; i < line; i++) {
+        for (int j = 0; j < column; j++) {
+            if (blocks[i][j].isActive)
+            {
+                ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, blocks[i][j].hBitmap);
+            }
+        }
+    }
 }
 
 
@@ -314,8 +323,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitWindow();//здесь инициализируем все что нужно для рисования в окне
     InitGame();//здесь инициализируем переменные игры
-    block_collision();
    // mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
+    block_collision();
     ShowCursor(NULL);
 
     while (!GetAsyncKeyState(VK_ESCAPE))
