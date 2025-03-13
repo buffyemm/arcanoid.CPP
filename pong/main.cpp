@@ -145,7 +145,7 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
     for (int i = 0; i < line; i++) {
         for (int j = 0; j < column; j++) {
-            ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, block.hBitmap);
+            ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, blocks[i][j].hBitmap);
         }
     }
 }
@@ -183,8 +183,8 @@ void block_collision() {
                         ball.dy = -ball.dy; // Отскок по вертикали
                     }
 
-                    blocks[i][j].isActive = false; // Деактивируем блок
                     collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
+                    blocks[i][j].isActive = false; // Деактивируем блок
                 }
             }
         }
