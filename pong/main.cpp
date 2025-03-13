@@ -39,7 +39,7 @@ void InitGame()
     //результат работы LoadImageA сохраняет в хэндлах битмапов, рисование спрайтов будет произовдиться с помощью этих хэндлов
     ball.hBitmap = (HBITMAP)LoadImageA(NULL, "ball.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     racket.hBitmap = (HBITMAP)LoadImageA(NULL, "racket.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-    block.hBitmap = (HBITMAP)LoadImageA(NULL, "bill.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+    blocks[line][column].hBitmap = (HBITMAP)LoadImageA(NULL, "bill.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     //------------------------------------------------------
     
@@ -61,7 +61,7 @@ void InitGame()
 
     ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
-    ball.speed = 3;
+    ball.speed = 10;
     ball.rad = 20;
     ball.x = racket.x;//x координата шарика - на середие ракетки
     ball.y = racket.y - ball.rad;//шарик лежит сверху ракетки
@@ -143,17 +143,20 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack); // задний фон
     ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap); // ракетка игрока
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
-
+    for (int i = 0; i < line; i++) {
+        for (int j = 0; j < column; j++) {
+            ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, block.hBitmap);
+        }
+    }
 }
 
 void block_collision() {
 
     bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
-
     for (int i = 0; i < line; i++) {
         for (int j = 0; j < column; j++) {
+
             if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
-                ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, block.hBitmap);
 
                 if (ball.x + ball.rad >= blocks[i][j].x && ball.x - ball.rad <= blocks[i][j].x + blocks[i][j].width &&
                     ball.y + ball.rad >= blocks[i][j].y && ball.y - ball.rad <= blocks[i][j].y + blocks[i][j].height) {
@@ -283,10 +286,6 @@ void ProcessBall()
     }
 }
 
-//void checkCollision() {
-//    if(!tail && ball.x >= block - block.width / 2. - ball.rad && ball.x <= block.x + block.width / 2. + ball.rad)
-//
-//}
 
 void InitWindow()
 {
