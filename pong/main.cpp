@@ -151,6 +151,7 @@ void ShowRacketAndBall()
     }
 }
 
+
 void block_collision() {
 
     bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
