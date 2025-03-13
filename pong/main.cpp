@@ -187,6 +187,7 @@ void block_collision() {
 
                     collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
                     blocks[i][j].isActive = false; // Деактивируем блок
+                    return;
                 }
             }
         }
