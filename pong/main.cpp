@@ -146,6 +146,7 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
     for (int i = 0; i < line; i++) {
         for (int j = 0; j < column; j++) {
+            if(blocks[i][j].isActive)
             ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, blocks[i][j].hBitmap);
         }
     }
