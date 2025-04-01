@@ -114,6 +114,7 @@ void ProcessInput()
 
 void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool alpha = false)
 {
+                  
     HBITMAP hbm, hOldbm;
     HDC hMemDC;
     BITMAP bm;
@@ -159,6 +160,12 @@ void block_collision() {
                     float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
                     float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
 
+                    
+                    float lenght = sqrt(ball.dx * ball.dx + ball.dy * ball.dy);//длинна вектора
+
+                    for (int k = 0; k < lenght; k++) {
+
+                    }
                     // Находим минимальное перекрытие вручную
                     float minOverlapX = min(overlapLeft, overlapRight);
                     float minOverlapY = min(overlapUP, overlapDOWN);
@@ -190,10 +197,15 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, 0, 0, window.width, window.height, hBack); // задний фон
     ShowBitmap(window.context, racket.x - racket.width / 2., racket.y, racket.width, racket.height, racket.hBitmap); // ракетка игрока
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
+
+    // Рисуем линию, представляющую движение мяча
+    MoveToEx(window.context, ball.x, ball.y, NULL); // Начальная точка - текущее положение мяча
+    LineTo(window.context, ball.x + ball.dx * ball.speed, ball.y + ball.dy*ball.speed); // Конечная точка - положение мяча после движения
+
+    // Отрисовка блоков
     for (int i = 0; i < line; i++) {
         for (int j = 0; j < column; j++) {
-            if (blocks[i][j].isActive)
-            {
+            if (blocks[i][j].isActive) {
                 ShowBitmap(window.context, blocks[i][j].x, blocks[i][j].y, blocks[i][j].width, blocks[i][j].height, blocks[i][j].hBitmap);
             }
         }
