@@ -63,7 +63,7 @@ void InitGame()
 
     ball.dy = (rand() % 65 + 35) / 100.;//формируем вектор полета шарика
     ball.dx = -(1 - ball.dy);//формируем вектор полета шарика
-    ball.speed = 16;
+    ball.speed = 300;
     ball.rad = 20;
     ball.x = racket.x;//x координата шарика - на середие ракетки
     ball.y = racket.y - ball.rad;//шарик лежит сверху ракетки
@@ -143,48 +143,63 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 
 
 void block_collision() {
-
+  
+    float ddx= ball.dx;  // не нужные
+    float ddy = ball.dy; // не нужные переменные
+    float bx = ball.x;
+    float by = ball.y;
     bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
+                    float lenght = sqrt((ball.dx* ball.speed) * (ball.dx * ball.speed) + (ball.dy * ball.speed) * (ball.dy * ball.speed));//длинна вектора
+    for (int k = 0; k < lenght; k++) {
+        //float temp = k / lenght;
 
-    for (int i = 0; i < line; i++) {
-        for (int j = 0; j < column; j++) {
-            if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
+          float s = k / (float)lenght;
+        float fx = ddx * ball.speed;
+        float fy = ddy * ball.speed;
+        float new_x = bx + fx * s;
+        float new_y = by + fy * s;
+        float fake_x = new_x + bx   * s;
+        float fake_y = new_y * s ;
+        fake_y *= -1;
+                SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
+                SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
+        for (int i = 0; i < line; i++) {
+            for (int j = 0; j < column; j++) {
+                if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
+
                 
+                    if (new_x  >= blocks[i][j].x && new_x  <= blocks[i][j].x + blocks[i][j].width &&
+                        new_y >= blocks[i][j].y && new_y <= blocks[i][j].y + blocks[i][j].height) {
 
-                if (ball.x + ball.rad >= blocks[i][j].x && ball.x - ball.rad <= blocks[i][j].x + blocks[i][j].width &&
-                    ball.y + ball.rad >= blocks[i][j].y && ball.y - ball.rad <= blocks[i][j].y + blocks[i][j].height) {
+                        // Определяем, с какой стороны произошло столкновение
+                        float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
+                        float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
+                        float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
+                        float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
 
-                    // Определяем, с какой стороны произошло столкновение
-                    float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
-                    float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
-                    float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
-                    float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
 
-                    
-                    float lenght = sqrt(ball.dx * ball.dx + ball.dy * ball.dy);//длинна вектора
 
-                    for (int k = 0; k < lenght; k++) {
 
+                        // Находим минимальное перекрытие вручную
+                        float minOverlapX = min(overlapLeft, overlapRight);
+                        float minOverlapY = min(overlapUP, overlapDOWN);
+
+                        //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
+                        //test
+                        // Изменяем направление мяча в зависимости от стороны столкновения
+                        if (minOverlapX < minOverlapY) {
+                            ProcessSound("bounce.wav");
+                            ddx *=-1; // Отскок по горизонтали
+                        }
+                        else {
+                            ProcessSound("bounce.wav");
+                            ddy *= -1; // Отскок по вертикали
+                        }
+
+                        collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
+                       //blocks[i][j].isActive = false; // Деактивируем блок
+                       // return;
                     }
-                    // Находим минимальное перекрытие вручную
-                    float minOverlapX = min(overlapLeft, overlapRight);
-                    float minOverlapY = min(overlapUP, overlapDOWN);
-                    
-                    //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
-                    //test
-                    // Изменяем направление мяча в зависимости от стороны столкновения
-                    if (minOverlapX<minOverlapY) {
-                        ProcessSound("bounce.wav");
-                        ball.dx = -ball.dx; // Отскок по горизонтали
-                    }
-                    else {
-                        ProcessSound("bounce.wav");
-                        ball.dy = -ball.dy; // Отскок по вертикали
-                    }
-
-                    collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
-                    blocks[i][j].isActive = false; // Деактивируем блок
-                    return;
                 }
             }
         }
@@ -199,8 +214,9 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
 
     // Рисуем линию, представляющую движение мяча
-    MoveToEx(window.context, ball.x, ball.y, NULL); // Начальная точка - текущее положение мяча
-    LineTo(window.context, ball.x + ball.dx * ball.speed, ball.y + ball.dy*ball.speed); // Конечная точка - положение мяча после движения
+                        SetPixel(window.context, 200, 1400, (255, 20, 147));
+    //MoveToEx(window.context, ball.x, ball.y, NULL); // Начальная точка - текущее положение мяча
+    //LineTo(window.context, ball.x + ball.dx * ball.speed, ball.y + ball.dy*ball.speed); // Конечная точка - положение мяча после движения
 
     // Отрисовка блоков
     for (int i = 0; i < line; i++) {
@@ -341,16 +357,22 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     while (!GetAsyncKeyState(VK_ESCAPE))
     {
+        POINT p;
+        GetCursorPos(&p);
+        ScreenToClient(window.hWnd, &p);
+        ball.x = p.x;
+        ball.y = p.y;
         ShowRacketAndBall();
-        block_collision();//рисуем фон, ракетку и шарик
         ShowScore();//рисуем очик и жизни
-        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
-        Sleep(5);//ждем 16 милисекунд (1/количество кадров в секунду)
 
         ProcessInput();//опрос клавиатуры
         LimitRacket();//проверяем, чтобы ракетка не убежала за экран
-        ProcessBall();//перемещаем шарик
+        //ProcessBall();//перемещаем шарик
         ProcessRoom();//обрабатываем отскоки от стен и каретки, попадание шарика в картетку
+        block_collision();//рисуем фон, ракетку и шарик
+        BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
+        Sleep(60);//ждем 16 милисекунд (1/количество кадров в секунду)
+
     }
 
 }
