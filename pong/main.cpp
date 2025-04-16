@@ -144,8 +144,8 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 
 void block_collision() {
   
-    float ddx= ball.dx;  // не нужные
-    float ddy = ball.dy; // не нужные переменные
+    float ddx= ball.dx;  
+    float ddy = ball.dy; 
     float bx = ball.x;
     float by = ball.y;
     bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
@@ -158,11 +158,13 @@ void block_collision() {
         float fy = ddy * ball.speed;
         float new_x = bx + fx * s;
         float new_y = by + fy * s;
-        float fake_x = new_x + bx   * s;
-        float fake_y = new_y * s ;
-        fake_y *= -1;
+        float temp_x = fx  + bx;
+        float fake_x = new_x ; 
+        float fake_y = new_y * -1;
+        /*float fake_x =  bx + fx;
+        float fake_y = new_y + by ;*/
                 SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
-                SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
+                SetPixel(window.context, fake_x, fake_y, RGB(173, 255, 47));
         for (int i = 0; i < line; i++) {
             for (int j = 0; j < column; j++) {
                 if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
@@ -170,7 +172,7 @@ void block_collision() {
                 
                     if (new_x  >= blocks[i][j].x && new_x  <= blocks[i][j].x + blocks[i][j].width &&
                         new_y >= blocks[i][j].y && new_y <= blocks[i][j].y + blocks[i][j].height) {
-
+                        
                         // Определяем, с какой стороны произошло столкновение
                         float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
                         float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
@@ -190,10 +192,12 @@ void block_collision() {
                         if (minOverlapX < minOverlapY) {
                             ProcessSound("bounce.wav");
                             ddx *=-1; // Отскок по горизонтали
+                            fake_x *= -1;
                         }
                         else {
                             ProcessSound("bounce.wav");
                             ddy *= -1; // Отскок по вертикали
+                            fake_y = ddy;
                         }
 
                         collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
