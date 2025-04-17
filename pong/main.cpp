@@ -160,9 +160,10 @@ void block_collision() {
         float new_y = by + fy * s;
         float fake_x = new_x + bx   * s;
         float fake_y = new_y * s ;
-        fake_y *= -1;
+        float reflectDX = ddx, reflectDY = ddy;
+        float colX = 0, colY = 0;
                 SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
-                SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
+                //SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
         for (int i = 0; i < line; i++) {
             for (int j = 0; j < column; j++) {
                 if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
@@ -184,16 +185,21 @@ void block_collision() {
                         float minOverlapX = min(overlapLeft, overlapRight);
                         float minOverlapY = min(overlapUP, overlapDOWN);
 
+                        colX = new_x;
+                        colY = new_y;
+                        
                         //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
                         //test
                         // Изменяем направление мяча в зависимости от стороны столкновения
                         if (minOverlapX < minOverlapY) {
                             ProcessSound("bounce.wav");
-                            ddx *=-1; // Отскок по горизонтали
+                            //ddx *=-1; // Отскок по горизонтали
+                            reflectDX *= -1;
                         }
                         else {
                             ProcessSound("bounce.wav");
                             ddy *= -1; // Отскок по вертикали
+                            reflectDY *= -1;
                         }
 
                         collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
@@ -203,6 +209,13 @@ void block_collision() {
                 }
             }
         }
+                       if (collisionHandled) {
+                       float ref_x = reflectDX * ball.speed;
+                       float ref_y = reflectDY * ball.speed;
+                       fake_x = colX + ref_x * s;
+                       fake_y = colY + ref_y * s;
+                       SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
+                       }
     }
 }
 
