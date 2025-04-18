@@ -149,19 +149,20 @@ void block_collision() {
     float bx = ball.x;
     float by = ball.y;
     bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
-                    float lenght = sqrt((ball.dx* ball.speed) * (ball.dx * ball.speed) + (ball.dy * ball.speed) * (ball.dy * ball.speed));//длинна вектора
+    float lenght = sqrt((ball.dx* ball.speed) * (ball.dx * ball.speed) + (ball.dy * ball.speed) * (ball.dy * ball.speed));//длинна вектора
+        float fake_x;
+        float fake_y;
+        float reflectDX = ddx, reflectDY = ddy;
+        float colX = 0, colY = 0;
+
     for (int k = 0; k < lenght; k++) {
         //float temp = k / lenght;
 
-          float s = k / (float)lenght;
+          float s = k / lenght;
         float fx = ddx * ball.speed;
         float fy = ddy * ball.speed;
         float new_x = bx + fx * s;
         float new_y = by + fy * s;
-        float fake_x = new_x + bx   * s;
-        float fake_y = new_y * s ;
-        float reflectDX = ddx, reflectDY = ddy;
-        float colX = 0, colY = 0;
                 SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
                 //SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
         for (int i = 0; i < line; i++) {
@@ -198,7 +199,7 @@ void block_collision() {
                         }
                         else {
                             ProcessSound("bounce.wav");
-                            ddy *= -1; // Отскок по вертикали
+                            //ddy *= -1; // Отскок по вертикали
                             reflectDY *= -1;
                         }
 
@@ -209,14 +210,19 @@ void block_collision() {
                 }
             }
         }
+    }
+    for (int k = 0; k < lenght; k++) {
+
+                    
                        if (collisionHandled) {
+                           float s = k / lenght;
                        float ref_x = reflectDX * ball.speed;
                        float ref_y = reflectDY * ball.speed;
                        fake_x = colX + ref_x * s;
                        fake_y = colY + ref_y * s;
-                       SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
+                       SetPixel(window.context, fake_x, fake_y, RGB(173, 255, 47));
+                        }
                        }
-    }
 }
 
 
