@@ -142,89 +142,91 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 }
 
 
-void block_collision() {
-  
-    float ddx= ball.dx;  // не нужные
-    float ddy = ball.dy; // не нужные переменные
-    float bx = ball.x;
-    float by = ball.y;
-    bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
-    float lenght = sqrt((ball.dx* ball.speed) * (ball.dx * ball.speed) + (ball.dy * ball.speed) * (ball.dy * ball.speed));//длинна вектора
-        float fake_x;
-        float fake_y;
-        float reflectDX = ddx, reflectDY = ddy;
-        float colX = 0, colY = 0;
+void block_collision(float start_x, float start_y, float dx, float dy, int max_bounces) {
+    if (max_bounces <= 0) return;
 
-    for (int k = 0; k < lenght; k++) {
-        //float temp = k / lenght;
+    float length = sqrt((dx * ball.speed) * (dx * ball.speed) +
+        (dy * ball.speed) * (dy * ball.speed));
 
-          float s = k / lenght;
+          float s = k / (float)lenght;
         float fx = ddx * ball.speed;
         float fy = ddy * ball.speed;
         float new_x = bx + fx * s;
         float new_y = by + fy * s;
+        float fake_x = new_x + bx   * s;
+        float fake_y = new_y * s ;
+        float reflectDX = ddx, reflectDY = ddy;
+        float colX = 0, colY = 0;
                 SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
                 //SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
         for (int i = 0; i < line; i++) {
             for (int j = 0; j < column; j++) {
                 if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
 
-                
-                    if (new_x  >= blocks[i][j].x && new_x  <= blocks[i][j].x + blocks[i][j].width &&
-                        new_y >= blocks[i][j].y && new_y <= blocks[i][j].y + blocks[i][j].height) {
+    // Цвет: красный для первого вектора, зелёный для отражений
+    COLORREF color = (max_bounces == 3) ? RGB(255, 20, 147) : RGB(173, 255, 47);
 
-                        // Определяем, с какой стороны произошло столкновение
-                        float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
-                        float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
-                        float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
-                        float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
+    for (int k = 0; k < length; k++) {
+        float s = k / (float)length;
+        float new_x = start_x + fx * s;
+        float new_y = start_y + fy * s;
 
+        // Проверяем столкновение с блоками
+        for (int i = 0; i < line; i++) {
+            for (int j = 0; j < column; j++) {
+                if (blocks[i][j].isActive) {
+                    // Проверяем пересечение окружности (мяча) с прямоугольником (блоком)
+                    float closestX = max(blocks[i][j].x, min(new_x, blocks[i][j].x + blocks[i][j].width));
+                    float closestY = max(blocks[i][j].y, min(new_y, blocks[i][j].y + blocks[i][j].height));
 
+                    float distanceX = new_x - closestX;
+                    float distanceY = new_y - closestY;
+                    float distanceSquared = distanceX * distanceX + distanceY * distanceY;
 
+                    if (distanceSquared < (ball.rad * ball.rad)) {
+                        // Определяем сторону столкновения
+                        float overlapLeft = (new_x + ball.rad) - blocks[i][j].x;
+                        float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (new_x - ball.rad);
+                        float overlapTop = (new_y + ball.rad) - blocks[i][j].y;
+                        float overlapBottom = (blocks[i][j].y + blocks[i][j].height) - (new_y - ball.rad);
 
-                        // Находим минимальное перекрытие вручную
                         float minOverlapX = min(overlapLeft, overlapRight);
-                        float minOverlapY = min(overlapUP, overlapDOWN);
+                        float minOverlapY = min(overlapTop, overlapBottom);
 
-                        colX = new_x;
-                        colY = new_y;
-                        
-                        //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
-                        //test
-                        // Изменяем направление мяча в зависимости от стороны столкновения
+                        reflectDX = dx;
+                        reflectDY = dy;
+
                         if (minOverlapX < minOverlapY) {
-                            ProcessSound("bounce.wav");
-                            //ddx *=-1; // Отскок по горизонтали
                             reflectDX *= -1;
                         }
                         else {
                             ProcessSound("bounce.wav");
-                            //ddy *= -1; // Отскок по вертикали
+                            ddy *= -1; // Отскок по вертикали
                             reflectDY *= -1;
                         }
 
-                        collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
-                       //blocks[i][j].isActive = false; // Деактивируем блок
-                       // return;
+                        collision_k = k;
+                        collision_x = new_x;
+                        collision_y = new_y;
+                        //blocks[i][j].isActive = false; // Деактивируем блок
+                        goto collision_found; // Выходим из вложенных циклов
                     }
                 }
             }
         }
-    }
-    for (int k = 0; k < lenght; k++) {
-
-                    
                        if (collisionHandled) {
-                           float s = k / lenght;
                        float ref_x = reflectDX * ball.speed;
                        float ref_y = reflectDY * ball.speed;
                        fake_x = colX + ref_x * s;
                        fake_y = colY + ref_y * s;
-                       SetPixel(window.context, fake_x, fake_y, RGB(173, 255, 47));
-                        }
+                       SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
                        }
+    }
 }
 
+void rev() {
+    block_collision(ball.x, ball.y, ball.dx, ball.dy, 3);
+}
 
 void ShowRacketAndBall()
 {
@@ -371,7 +373,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     InitWindow();//здесь инициализируем все что нужно для рисования в окне
     InitGame();//здесь инициализируем переменные игры
    // mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
-    block_collision();
+    
     ShowCursor(NULL);
 
     while (!GetAsyncKeyState(VK_ESCAPE))
@@ -388,7 +390,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
         LimitRacket();//проверяем, чтобы ракетка не убежала за экран
         //ProcessBall();//перемещаем шарик
         ProcessRoom();//обрабатываем отскоки от стен и каретки, попадание шарика в картетку
-        block_collision();//рисуем фон, ракетку и шарик
+        rev();//рисуем фон, ракетку и шарик
         BitBlt(window.device_context, 0, 0, window.width, window.height, window.context, 0, 0, SRCCOPY);//копируем буфер в окно
         Sleep(60);//ждем 16 милисекунд (1/количество кадров в секунду)
 
