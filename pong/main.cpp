@@ -43,10 +43,10 @@ void InitGame()
     auto blockBMP = (HBITMAP)LoadImageA(NULL, "bill.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     //------------------------------------------------------
-    
-    for (int i=0;i < line;i++) {
+
+    for (int i = 0;i < line;i++) {
         for (int j = 0; j < column; j++) {
-            blocks[i][j].width = window.width/line;
+            blocks[i][j].width = window.width / line;
             blocks[i][j].height = window.height / 3 / column;
             blocks[i][j].x = blocks[i][j].width * i;
             blocks[i][j].y = blocks[i][j].height * j + window.height / 3;
@@ -114,7 +114,7 @@ void ProcessInput()
 
 void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool alpha = false)
 {
-                  
+
     HBITMAP hbm, hOldbm;
     HDC hMemDC;
     BITMAP bm;
@@ -148,20 +148,11 @@ void block_collision(float start_x, float start_y, float dx, float dy, int max_b
     float length = sqrt((dx * ball.speed) * (dx * ball.speed) +
         (dy * ball.speed) * (dy * ball.speed));
 
-          float s = k / (float)lenght;
-        float fx = ddx * ball.speed;
-        float fy = ddy * ball.speed;
-        float new_x = bx + fx * s;
-        float new_y = by + fy * s;
-        float fake_x = new_x + bx   * s;
-        float fake_y = new_y * s ;
-        float reflectDX = ddx, reflectDY = ddy;
-        float colX = 0, colY = 0;
-                SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
-                //SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
-        for (int i = 0; i < line; i++) {
-            for (int j = 0; j < column; j++) {
-                if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
+    int collision_k = -1;
+    float reflectDX = dx, reflectDY = dy;
+    float collision_x = 0, collision_y = 0;
+    float fx = dx * ball.speed;
+    float fy = dy * ball.speed;
 
     // Цвет: красный для первого вектора, зелёный для отражений
     COLORREF color = (max_bounces == 3) ? RGB(255, 20, 147) : RGB(173, 255, 47);
@@ -200,8 +191,6 @@ void block_collision(float start_x, float start_y, float dx, float dy, int max_b
                             reflectDX *= -1;
                         }
                         else {
-                            ProcessSound("bounce.wav");
-                            ddy *= -1; // Отскок по вертикали
                             reflectDY *= -1;
                         }
 
@@ -214,13 +203,15 @@ void block_collision(float start_x, float start_y, float dx, float dy, int max_b
                 }
             }
         }
-                       if (collisionHandled) {
-                       float ref_x = reflectDX * ball.speed;
-                       float ref_y = reflectDY * ball.speed;
-                       fake_x = colX + ref_x * s;
-                       fake_y = colY + ref_y * s;
-                       SetPixel(window.context, fake_x, new_y, RGB(173, 255, 47));
-                       }
+
+        // Рисуем текущую точку вектора
+        SetPixel(window.context, new_x, new_y, color);
+    }
+
+collision_found:
+    // Если было столкновение, рисуем отражение
+    if (collision_k != -1) {
+        block_collision(collision_x, collision_y, reflectDX, reflectDY, max_bounces - 1);
     }
 }
 
@@ -235,7 +226,7 @@ void ShowRacketAndBall()
     ShowBitmap(window.context, ball.x - ball.rad, ball.y - ball.rad, 2 * ball.rad, 2 * ball.rad, ball.hBitmap, true); // шарик
 
     // Рисуем линию, представляющую движение мяча
-                        SetPixel(window.context, 200, 1400, (255, 20, 147));
+    SetPixel(window.context, 200, 1400, (255, 20, 147));
     //MoveToEx(window.context, ball.x, ball.y, NULL); // Начальная точка - текущее положение мяча
     //LineTo(window.context, ball.x + ball.dx * ball.speed, ball.y + ball.dy*ball.speed); // Конечная точка - положение мяча после движения
 
@@ -287,7 +278,7 @@ void CheckFloor()
         if (!tail && ball.x >= racket.x - racket.width / 2. - ball.rad && ball.x <= racket.x + racket.width / 2. + ball.rad)//шарик отбит, и мы не в режиме обработки хвоста
         {
             game.score++;//за каждое отбитие даем одно очко
-           // ball.speed += 5. / game.score;//но увеличиваем сложность - прибавляем скорости шарику
+            // ball.speed += 5. / game.score;//но увеличиваем сложность - прибавляем скорости шарику
             ball.dy *= -1;//отскок
             racket.width -= 10. / game.score;//дополнительно уменьшаем ширину ракетки - для сложности
             ProcessSound("bounce.wav");//играем звук отскока
@@ -325,7 +316,7 @@ void ProcessRoom()
     CheckWalls();
     CheckRoof();
     CheckFloor();
- //обрабатываем стены, потолок и пол. принцип - угол падения равен углу отражения, а значит, для отскока мы можем просто инвертировать часть вектора движения шарика
+    //обрабатываем стены, потолок и пол. принцип - угол падения равен углу отражения, а значит, для отскока мы можем просто инвертировать часть вектора движения шарика
 }
 
 void ProcessBall()
@@ -372,8 +363,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     InitWindow();//здесь инициализируем все что нужно для рисования в окне
     InitGame();//здесь инициализируем переменные игры
-   // mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
-    
+    // mciSendString(TEXT("play ..\\Debug\\music.mp3 repeat"), NULL, 0, NULL);
+
     ShowCursor(NULL);
 
     while (!GetAsyncKeyState(VK_ESCAPE))
