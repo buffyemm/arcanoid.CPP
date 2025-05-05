@@ -44,7 +44,7 @@ void InitGame()
     hBack = (HBITMAP)LoadImageA(NULL, "back.bmp", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
     //------------------------------------------------------
     
-    for (int i=0;i < line;i++) {
+    for (int i=0; i < line;i++) {
         for (int j = 0; j < column; j++) {
             blocks[i][j].width = window.width/line;
             blocks[i][j].height = window.height / 3 / column;
