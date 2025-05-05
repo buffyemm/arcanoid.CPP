@@ -143,69 +143,73 @@ void ShowBitmap(HDC hDC, int x, int y, int x1, int y1, HBITMAP hBitmapBall, bool
 
 
 void block_collision() {
-  
-    float ddx= ball.dx;  
-    float ddy = ball.dy; 
     float bx = ball.x;
     float by = ball.y;
-    bool collisionHandled = false; // Флаг для отслеживания, было ли обработано столкновение
-                    float lenght = sqrt((ball.dx* ball.speed) * (ball.dx * ball.speed) + (ball.dy * ball.speed) * (ball.dy * ball.speed));//длинна вектора
-    for (int k = 0; k < lenght; k++) {
-        //float temp = k / lenght;
+    bool collisionHandled = false;
+    float length = sqrt((ball.dx * ball.speed) * (ball.dx * ball.speed) +
+        (ball.dy * ball.speed) * (ball.dy * ball.speed));
 
-          float s = k / (float)lenght;
-        float fx = ddx * ball.speed;
-        float fy = ddy * ball.speed;
-        float new_x = bx + fx * s;
-        float new_y = by + fy * s;
-        float temp_x = fx  + bx;
-        float fake_x = new_x ; 
-        float fake_y = new_y * -1;
-        /*float fake_x =  bx + fx;
-        float fake_y = new_y + by ;*/
-                SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
-                SetPixel(window.context, fake_x, fake_y, RGB(173, 255, 47));
+    int collision_k = -1; // Шаг, на котором произошло столкновение
+    float reflectDX = 0, reflectDY = 0; // Направление отскока
+    float collision_x = 0, collision_y = 0; // Точка столкновения
+
+    // 1. Проходим по всей длине вектора и ищем столкновение
+    for (int k = 0; k < length; k++) {
+        float s = k / (float)length;
+        float new_x = bx + (ball.dx * ball.speed) * s;
+        float new_y = by + (ball.dy * ball.speed) * s;
+
+        // Проверяем столкновение с блоками
         for (int i = 0; i < line; i++) {
             for (int j = 0; j < column; j++) {
-                if (blocks[i][j].isActive && !collisionHandled) { // Проверяем только если столкновение ещё не обработано
-
-                
-                    if (new_x  >= blocks[i][j].x && new_x  <= blocks[i][j].x + blocks[i][j].width &&
+                if (blocks[i][j].isActive && !collisionHandled) {
+                    if (new_x >= blocks[i][j].x && new_x <= blocks[i][j].x + blocks[i][j].width &&
                         new_y >= blocks[i][j].y && new_y <= blocks[i][j].y + blocks[i][j].height) {
-                        
-                        // Определяем, с какой стороны произошло столкновение
-                        float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x; // расстояние до левой стороны блока
-                        float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad); // расстояние до правой стороны блока
-                        float overlapUP = (ball.y + ball.rad) - blocks[i][j].y; // расстояние до верхней стороны блока
-                        float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad); // расстояние до нижней стороны блока
 
+                        // Определяем сторону столкновения
+                        float overlapLeft = (ball.x + ball.rad) - blocks[i][j].x;
+                        float overlapRight = (blocks[i][j].x + blocks[i][j].width) - (ball.x - ball.rad);
+                        float overlapUP = (ball.y + ball.rad) - blocks[i][j].y;
+                        float overlapDOWN = (blocks[i][j].y + blocks[i][j].height) - (ball.y - ball.rad);
 
-
-
-                        // Находим минимальное перекрытие вручную
                         float minOverlapX = min(overlapLeft, overlapRight);
                         float minOverlapY = min(overlapUP, overlapDOWN);
 
-                        //float minOverlap = std::min({ overlapLeft, overlapRight, overlapTop, overlapBottom }); //не работает
-                        //test
-                        // Изменяем направление мяча в зависимости от стороны столкновения
+                        reflectDX = ball.dx;
+                        reflectDY = ball.dy;
                         if (minOverlapX < minOverlapY) {
-                            ProcessSound("bounce.wav");
-                            ddx *=-1; // Отскок по горизонтали
-                            fake_x *= -1;
+                            reflectDX *= -1; // Горизонтальный отскок
                         }
                         else {
-                            ProcessSound("bounce.wav");
-                            ddy *= -1; // Отскок по вертикали
-                            fake_y = ddy;
+                            reflectDY *= -1; // Вертикальный отскок
                         }
 
-                        collisionHandled = true; // Столкновение обработано, больше не проверяем другие блоки
-                       //blocks[i][j].isActive = false; // Деактивируем блок
-                       // return;
+                        collisionHandled = true;
+                        collision_k = k;
+                        collision_x = new_x;
+                        collision_y = new_y;
+                        blocks[i][j].isActive = false;
+                        break;
                     }
                 }
             }
+        }
+
+        // Рисуем красный вектор только ДО столкновения
+        if (collision_k == -1 || k <= collision_k) {
+            SetPixel(window.context, new_x, new_y, RGB(255, 20, 147));
+        }
+    }
+
+    // 2. Если столкновение было, рисуем зелёный вектор отражения
+    if (collision_k != -1) {
+        float penetration_depth = length - collision_k;
+
+        for (int m = 1; m <= penetration_depth; m++) {
+            float t = m / (float)length; // Сохраняем плавность как у красного вектора
+            float reflect_x = collision_x + reflectDX * ball.speed * t;
+            float reflect_y = collision_y + reflectDY * ball.speed * t;
+            SetPixel(window.context, reflect_x, reflect_y, RGB(173, 255, 47));
         }
     }
 }
